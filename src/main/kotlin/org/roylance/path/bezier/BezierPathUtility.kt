@@ -6,133 +6,99 @@ import java.util.regex.Pattern
 
 
 object BezierPathUtility {
-    val matchPathRegex = Pattern.compile("([MmLlHhVvAaQqTtCcSsZz])|([-+]?((\\d*\\.\\d+)|(\\d+))([eE][-+]?\\d+)?)")!!
-
-    fun parsePathString(path: String, tolerance: Float = 0.0001f): List<Vector> {
-        val bezierPath = BezierListProducer()
-        val commandList = matchPathRegex.matcher(path)
+    fun parsePathString(list: String, tolerance: Float = 0.0001f): List<Vector> {
+        val path = BezierListProducer()
+        val matchPathCmd = Pattern.compile("([MmLlHhVvAaQqTtCcSsZz])|([-+]?((\\d*\\.\\d+)|(\\d+))([eE][-+]?\\d+)?)").matcher(list)
 
         val tokens = LinkedList<String>()
-        while (commandList.find()) {
-            tokens.addLast(commandList.group())
+        while (matchPathCmd.find()) {
+            tokens.addLast(matchPathCmd.group())
         }
 
-        var currentCommand = ZUpper
-        var i = 0
-        while (tokens.isNotEmpty()) {
-            val currentToken = tokens.removeFirst()
-            val initChar = currentToken[0]
-
-            if ((initChar in AUpper..ZUpper) || (initChar in ALower..ZLower)) {
-                currentCommand = initChar
-            }
-            else {
-                tokens.addFirst(currentToken)
+        var curCmd = 'Z'
+        while (tokens.size != 0) {
+            val curToken = tokens.removeFirst()
+            val initChar = curToken[0]
+            if (initChar in 'A'..'Z' || initChar in 'a'..'z') {
+                curCmd = initChar
+            } else {
+                tokens.addFirst(curToken)
             }
 
-            when (currentCommand) {
-                MUpper -> {
-                    i++
-                    bezierPath.moveToAbsolute(nextFloat(tokens), nextFloat(tokens))
-                    currentCommand = LUpper
+            when (curCmd) {
+                'M' -> {
+                    path.movetoAbs(nextFloat(tokens), nextFloat(tokens))
+                    curCmd = 'L'
                 }
-                MLower -> {
-                    i++
-                    bezierPath.moveToRelative(nextFloat(tokens), nextFloat(tokens))
-                    currentCommand = LLower
+                'm' -> {
+                    path.movetoRel(nextFloat(tokens), nextFloat(tokens))
+                    curCmd = 'l'
                 }
-                LUpper -> {
-                    i++
-                    bezierPath.lineToAbsolute(nextFloat(tokens), nextFloat(tokens))
+                'L' -> path.linetoAbs(nextFloat(tokens), nextFloat(tokens))
+                'l' -> path.linetoRel(nextFloat(tokens), nextFloat(tokens))
+                'H' -> path.linetoHorizontalAbs(nextFloat(tokens))
+                'h' -> path.linetoHorizontalRel(nextFloat(tokens))
+                'V' -> path.linetoVerticalAbs(nextFloat(tokens))
+                'v' -> path.linetoVerticalAbs(nextFloat(tokens))
+                'A', 'a' -> {
                 }
-                LLower -> {
-                    i++
-                    bezierPath.lineToRelative(nextFloat(tokens), nextFloat(tokens))
-                }
-                HUpper -> {
-                    i++
-                    bezierPath.lineToHorizontalAbsolute(nextFloat(tokens))
-                }
-                HLower -> {
-                    i++
-                    bezierPath.lineToHorizontalRelative(nextFloat(tokens))
-                }
-                VUpper -> {
-                    i++
-                    bezierPath.lineToVerticalAbsolute(nextFloat(tokens))
-                }
-                VLower -> {
-                    i++
-                    bezierPath.lineToVerticalRelative(nextFloat(tokens))
-                }
-                ALower, AUpper -> {
-                    i++
-                }
-                QUpper -> {
-                    i++
-                    bezierPath.curveToQuadraticAbsolute(nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens))
-                }
-                QLower -> {
-                    i++
-                    bezierPath.curveToQuadraticRelative(nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens))
-                }
-                TUpper -> {
-                    i++
-                    bezierPath.curveToQuadraticSmoothAbsolute(nextFloat(tokens), nextFloat(tokens))
-                }
-                TLower -> {
-                    i++
-                    bezierPath.curveToQuadraticSmoothRelative(nextFloat(tokens), nextFloat(tokens))
-                }
-                CUpper -> {
-                    i++
-                    bezierPath.curveToCubicAbsolute(nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens))
-                }
-                CLower -> {
-                    i++
-                    bezierPath.curveToCubicRelative(nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens))
-                }
-                SUpper -> {
-                    i++
-                    bezierPath.curveToCubicSmoothAbsolute(nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens))
-                }
-                SLower -> {
-                    i++
-                    bezierPath.curveToCubicSmoothRelative(nextFloat(tokens), nextFloat(tokens), nextFloat(tokens), nextFloat(tokens))
-                }
-                ZUpper, ZLower -> {
-                    i++
-                    bezierPath.closePath()
-                }
+                'Q' -> path.curvetoQuadraticAbs(nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens))
+                'q' -> path.curvetoQuadraticAbs(nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens))
+                'T' -> path.curvetoQuadraticSmoothAbs(nextFloat(tokens), nextFloat(tokens))
+                't' -> path.curvetoQuadraticSmoothRel(nextFloat(tokens), nextFloat(tokens))
+                'C' -> path.curvetoCubicAbs(nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens))
+                'c' -> path.curvetoCubicRel(nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens))
+                'S' -> path.curvetoCubicSmoothAbs(nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens))
+                's' -> path.curvetoCubicSmoothRel(nextFloat(tokens), nextFloat(tokens),
+                        nextFloat(tokens), nextFloat(tokens))
+                'Z', 'z' -> path.closePath()
+                else -> throw RuntimeException("Invalid path element")
             }
-
         }
 
-        return bezierPath.generateVectors(tolerance)
+        return produceVectors(tolerance, path)
+    }
+
+    private fun eval(interp: Float, path: org.roylance.path.bezier.BezierListProducer): Vector {
+        val point = Vector(0f, 0f)
+        var curLength = (path.curveLength * interp).toDouble()
+        val it = path.bezierSegs.iterator()
+        while (it.hasNext()) {
+            val bez = it.next()
+
+            val bezLength = bez.length.toDouble()
+            if (curLength < bezLength) {
+                val param = curLength / bezLength
+                bez.eval(param, point)
+                break
+            }
+
+            curLength -= bezLength
+        }
+
+        return point
+    }
+
+    private fun produceVectors(tolerance: Float = 0.0001f, path: org.roylance.path.bezier.BezierListProducer): List<Vector> {
+        val returnVectors = ArrayList<Vector>()
+        var runningTolerance = 0f
+        while (runningTolerance < 1f) {
+            runningTolerance += tolerance
+            returnVectors.add(eval(runningTolerance, path))
+        }
+
+        return returnVectors
     }
 
     private fun nextFloat(l: LinkedList<String>): Float {
-        return l.removeFirst().toFloat()
+        val s = l.removeFirst()
+        return java.lang.Float.parseFloat(s)
     }
-
-    const val ZUpper = 'Z'
-    const val ZLower = 'z'
-    const val AUpper = 'A'
-    const val ALower = 'a'
-    const val MUpper = 'M'
-    const val MLower = 'm'
-    const val LUpper = 'L'
-    const val LLower = 'l'
-    const val HUpper = 'H'
-    const val HLower = 'h'
-    const val VUpper = 'V'
-    const val VLower = 'v'
-    const val QUpper = 'Q'
-    const val QLower = 'q'
-    const val TUpper = 'T'
-    const val TLower = 't'
-    const val CUpper = 'C'
-    const val CLower = 'c'
-    const val SUpper = 'S'
-    const val SLower = 's'
 }

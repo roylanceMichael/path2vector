@@ -1,194 +1,208 @@
 package org.roylance.path.bezier
 
-import org.roylance.path.IPathHandler
-import org.roylance.path.models.Vector
+import com.piro.bezier.ParseException
+import com.piro.bezier.PathHandler
+import java.util.*
 
 
-class BezierListProducer: IPathHandler {
-    private val segments = ArrayList<Bezier>()
-    val coordinates = FloatArray(6).toTypedArray()
-    val history = BezierHistory()
+class BezierListProducer : PathHandler {
 
-    var curveLength = 0f
+    internal val bezierSegs = ArrayList<Bezier>()
+    internal var coords = FloatArray(6)
+    internal var curveLength = 0f
+    internal var hist = BezierHistory()
 
+    @Throws(ParseException::class)
     override fun startPath() {
         curveLength = 0f
-        segments.clear()
+        bezierSegs.clear()
     }
 
-    override fun endPath() {
-        history.setLast(history.startPoint.x, history.startPoint.y)
-        history.setLastKnot(history.startPoint.x, history.startPoint.y)
+    @Throws(ParseException::class)
+    override fun movetoRel(x: Float, y: Float) {
+        val offx = hist.lastPoint.x
+        val offy = hist.lastPoint.y
+
+        movetoAbs(offx + x, offy + y)
     }
 
-    override fun moveToRelative(x: Float, y: Float) {
-        moveToAbsolute(history.lastPoint.x + x, history.lastPoint.y + y)
+    @Throws(ParseException::class)
+    override fun movetoAbs(x: Float, y: Float) {
+        hist.setLastPoint(x, y)
     }
 
-    override fun moveToAbsolute(x: Float, y: Float) {
-        history.setLast(x, y)
-    }
-
+    @Throws(ParseException::class)
     override fun closePath() {
+        //command(SVGPathSeg.PATHSEG_CLOSEPATH);
     }
 
-    override fun lineToRelative(x: Float, y: Float) {
-        lineToAbsolute(history.lastPoint.x + x, history.lastPoint.y + y)
+    @Throws(ParseException::class)
+    override fun linetoRel(x: Float, y: Float) {
+        val offx = hist.lastPoint.x
+        val offy = hist.lastPoint.y
+
+        linetoAbs(offx + x, offy + y)
     }
 
-    override fun lineToAbsolute(x: Float, y: Float) {
-        coordinates[0] = x
-        coordinates[1] = y
-        coordinates[2] = 0f
-        coordinates[3] = 0f
-        coordinates[4] = 0f
-        coordinates[5] = 0f
+    @Throws(ParseException::class)
+    override fun linetoAbs(x: Float, y: Float) {
 
-        val b = Bezier()
-        b.setCoordinates(history.lastPoint.x, history.lastPoint.y, coordinates, 1)
-        segments.add(b)
+        coords[0] = x
+        coords[1] = y
+
+        val b = Bezier(hist.lastPoint.x, hist.lastPoint.y, coords, 1)
+        bezierSegs.add(b)
         curveLength += b.length
 
-        history.setLast(x, y)
-        history.setLastKnot(x, y)
+        hist.setLastPoint(x, y)
+        hist.setLastKnot(x, y)
+
     }
 
-    override fun lineToHorizontalRelative(x: Float) {
-        lineToAbsolute(x + history.lastPoint.x, history.lastPoint.y)
+    @Throws(ParseException::class)
+    override fun linetoHorizontalRel(x: Float) {
+        linetoAbs(x + hist.lastPoint.x, hist.lastPoint.y)
     }
 
-    override fun lineToHorizontalAbsolute(x: Float) {
-        lineToAbsolute(x, history.lastPoint.y)
+    @Throws(ParseException::class)
+    override fun linetoHorizontalAbs(x: Float) {
+        linetoAbs(x, hist.lastPoint.y)
     }
 
-    override fun lineToVerticalRelative(y: Float) {
-        lineToAbsolute(history.lastPoint.x, y + history.lastPoint.y)
+    @Throws(ParseException::class)
+    override fun linetoVerticalRel(y: Float) {
+        linetoAbs(hist.lastPoint.x, y + hist.lastPoint.y)
     }
 
-    override fun lineToVerticalAbsolute(y: Float) {
-        lineToAbsolute(history.lastPoint.x, y)
+    @Throws(ParseException::class)
+    override fun linetoVerticalAbs(y: Float) {
+        linetoAbs(hist.lastPoint.x, y)
     }
 
-    override fun curveToCubicRelative(x1: Float, y1: Float, x2: Float, y2: Float, x: Float, y: Float) {
-        curveToCubicAbsolute(x1 + history.lastPoint.x,
-                y1 + history.lastPoint.y,
-                x2 + history.lastPoint.x,
-                y2 + history.lastPoint.y,
-                x + history.lastPoint.x,
-                y + history.lastPoint.y)
+    @Throws(ParseException::class)
+    override fun curvetoCubicRel(x1: Float, y1: Float,
+                                 x2: Float, y2: Float,
+                                 x: Float, y: Float) {
+        val offx = hist.lastPoint.x
+        val offy = hist.lastPoint.y
+
+        curvetoCubicAbs(x1 + offx, y1 + offy,
+                x2 + offx, y2 + offy,
+                x + offx, y + offy)
     }
 
-    override fun curveToCubicAbsolute(x1: Float, y1: Float, x2: Float, y2: Float, x: Float, y: Float) {
-        coordinates[0] = x1
-        coordinates[1] = y1
-        coordinates[2] = x2
-        coordinates[3] = y2
-        coordinates[4] = x
-        coordinates[5] = y
+    @Throws(ParseException::class)
+    override fun curvetoCubicAbs(x1: Float, y1: Float,
+                                 x2: Float, y2: Float,
+                                 x: Float, y: Float) {
 
-        val bezier = Bezier()
-        bezier.setCoordinates(history.lastPoint.x, history.lastPoint.y, coordinates, 3)
-        segments.add(bezier)
-        curveLength += bezier.length
-        history.setLast(x, y)
-        history.setLastKnot(x2, y2)
+        coords[0] = x1
+        coords[1] = y1
+        coords[2] = x2
+        coords[3] = y2
+        coords[4] = x
+        coords[5] = y
+
+        val b = Bezier(hist.lastPoint.x, hist.lastPoint.y, coords, 3)
+        bezierSegs.add(b)
+        curveLength += b.length
+        hist.setLastPoint(x, y)
+        hist.setLastKnot(x2, y2)
     }
 
-    override fun curveToCubicSmoothRelative(x2: Float, y2: Float, x: Float, y: Float) {
-        curveToCubicSmoothAbsolute(x2 + history.lastPoint.x,
-                y2 + history.lastPoint.y,
-                x + history.lastPoint.x,
-                y + history.lastPoint.y)
+    @Throws(ParseException::class)
+    override fun curvetoCubicSmoothRel(x2: Float, y2: Float,
+                                       x: Float, y: Float) {
+        val offx = hist.lastPoint.x
+        val offy = hist.lastPoint.y
+
+        curvetoCubicSmoothAbs(x2 + offx, y2 + offy, x + offx, y + offy)
     }
 
-    override fun curveToCubicSmoothAbsolute(x2: Float, y2: Float, x: Float, y: Float) {
-        val oldKx = history.lastKnot.x
-        val oldKy = history.lastKnot.y
-        val oldX = history.lastPoint.x
-        val oldY = history.lastPoint.y
+    @Throws(ParseException::class)
+    override fun curvetoCubicSmoothAbs(x2: Float, y2: Float,
+                                       x: Float, y: Float) {
+
+        val oldKx = hist.lastKnot.x
+        val oldKy = hist.lastKnot.y
+        val oldX = hist.lastPoint.x
+        val oldY = hist.lastPoint.y
         //Calc knot as reflection of old knot
         val k1x = oldX * 2f - oldKx
         val k1y = oldY * 2f - oldKy
 
-        coordinates[0] = k1x
-        coordinates[1] = k1y
-        coordinates[2] = x2
-        coordinates[3] = y2
-        coordinates[4] = x
-        coordinates[5] = y
+        coords[0] = k1x
+        coords[1] = k1y
+        coords[2] = x2
+        coords[3] = y2
+        coords[4] = x
+        coords[5] = y
 
-        val bezier = Bezier()
-        bezier.setCoordinates(history.lastPoint.x, history.lastPoint.y, coordinates, 3)
-        segments.add(bezier)
-        curveLength += bezier.length
-
-        history.setLast(x, y)
-        history.setLastKnot(x2, y2)
+        val b = Bezier(hist.lastPoint.x, hist.lastPoint.y, coords, 3)
+        bezierSegs.add(b)
+        curveLength += b.length
+        hist.setLastPoint(x, y)
+        hist.setLastKnot(x2, y2)
     }
 
-    override fun curveToQuadraticRelative(x1: Float, y1: Float, x: Float, y: Float) {
-        curveToQuadraticAbsolute(x1 + history.lastPoint.x,
-                y1 + history.lastPoint.y,
-                x + history.lastPoint.x,
-                y + history.lastPoint.y)
+    @Throws(ParseException::class)
+    override fun curvetoQuadraticRel(x1: Float, y1: Float,
+                                     x: Float, y: Float) {
+        val offx = hist.lastPoint.x
+        val offy = hist.lastPoint.y
+
+        curvetoQuadraticAbs(x1 + offx, y1 + offy, x + offx, y + offy)
     }
 
-    override fun curveToQuadraticAbsolute(x1: Float, y1: Float, x: Float, y: Float) {
-        coordinates[0] = x1
-        coordinates[1] = y1
-        coordinates[2] = x
-        coordinates[3] = y
-        coordinates[4] = 0f
-        coordinates[5] = 0f
+    @Throws(ParseException::class)
+    override fun curvetoQuadraticAbs(x1: Float, y1: Float,
+                                     x: Float, y: Float) {
 
-        val bezier = Bezier()
-        bezier.setCoordinates(history.lastPoint.x, history.lastPoint.y, coordinates, 2)
-        segments.add(bezier)
-        curveLength += bezier.length
+        coords[0] = x1
+        coords[1] = y1
+        coords[2] = x
+        coords[3] = y
 
-        history.setLast(x, y)
-        history.setLastKnot(x1, y1)
+        val b = Bezier(hist.lastPoint.x, hist.lastPoint.y, coords, 2)
+        bezierSegs.add(b)
+        curveLength += b.length
+
+        hist.setLastPoint(x, y)
+        hist.setLastKnot(x1, y1)
     }
 
-    override fun curveToQuadraticSmoothRelative(x: Float, y: Float) {
-        curveToQuadraticSmoothAbsolute(
-                x + history.lastPoint.x,
-                y + history.lastPoint.y)
+    override fun curvetoQuadraticSmoothRel(x: Float, y: Float) {
+        val offx = hist.lastPoint.x
+        val offy = hist.lastPoint.y
+
+        curvetoQuadraticSmoothAbs(x + offx, y + offy)
     }
 
-    override fun curveToQuadraticSmoothAbsolute(x: Float, y: Float) {
-        curveToQuadraticAbsolute(history.lastKnot.x, history.lastKnot.y, x, y)
+    @Throws(ParseException::class)
+    override fun curvetoQuadraticSmoothAbs(x: Float, y: Float) {
+
+        curvetoQuadraticAbs(hist.lastKnot.x, hist.lastKnot.y, x, y)
     }
 
-    override fun arcRelative(rx: Float, ry: Float, xAxisRotation: Float, largeArcFlag: Boolean, sweefFlag: Boolean, x: Float, y: Float) {
+    @Throws(ParseException::class)
+    override fun arcRel(rx: Float, ry: Float,
+                        xAxisRotation: Float,
+                        largeArcFlag: Boolean, sweepFlag: Boolean,
+                        x: Float, y: Float) {
+
     }
 
-    override fun arcAbsolute(rx: Float, ry: Float, xAxisRotation: Float, largeArcFlag: Boolean, sweefFlag: Boolean, x: Float, y: Float) {
+    @Throws(ParseException::class)
+    override fun arcAbs(rx: Float, ry: Float,
+                        xAxisRotation: Float,
+                        largeArcFlag: Boolean, sweepFlag: Boolean,
+                        x: Float, y: Float) {
+
     }
 
-    override fun generateVectors(tolerance: Float): List<Vector> {
-        val returnList = ArrayList<Vector>()
-        var runningInterpolation = 0.0f
-        while (runningInterpolation <= 1.0) {
-            runningInterpolation += tolerance
-            returnList.add(evaluate(runningInterpolation))
-        }
-
-        return returnList
-    }
-
-    private fun evaluate(interpolation: Float): Vector {
-        var returnPoint = Vector(0f, 0f)
-
-        var tempCurveLength = curveLength * interpolation
-        for(segment in segments) {
-            if (tempCurveLength < segment.length) {
-                returnPoint = segment.eval((tempCurveLength / segment.length), returnPoint)
-                break
-            }
-            tempCurveLength -= segment.length
-        }
-
-        return returnPoint
+    @Throws(ParseException::class)
+    override fun endPath() {
+        hist.setLastPoint(hist.startPoint.x, hist.startPoint.y)
+        hist.setLastKnot(hist.startPoint.x, hist.startPoint.y)
     }
 }

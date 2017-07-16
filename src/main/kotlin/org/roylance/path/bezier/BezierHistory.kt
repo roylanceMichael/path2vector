@@ -4,11 +4,17 @@ import org.roylance.path.models.Vector
 
 
 class BezierHistory {
-    val startPoint = Vector(0f, 0f)
-    val lastPoint = Vector(0f, 0f)
-    val lastKnot = Vector(0f, 0f)
 
-    fun setLast(x: Float, y: Float) {
+    internal var startPoint = Vector(0f, 0f)
+    internal var lastPoint = Vector(0f, 0f)
+    internal var lastKnot = Vector(0f, 0f)
+
+    fun setStartPoint(x: Float, y: Float) {
+        startPoint.x = x
+        startPoint.y = y
+    }
+
+    fun setLastPoint(x: Float, y: Float) {
         lastPoint.x = x
         lastPoint.y = y
     }
