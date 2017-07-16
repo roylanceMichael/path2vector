@@ -1,13 +1,14 @@
 package org.roylance.path.bezier
 
-import org.roylance.path.IPathHandler
+import org.roylance.path.models.Vector
 import java.util.*
 import java.util.regex.Pattern
+
 
 object BezierPathUtility {
     val matchPathRegex = Pattern.compile("([MmLlHhVvAaQqTtCcSsZz])|([-+]?((\\d*\\.\\d+)|(\\d+))([eE][-+]?\\d+)?)")!!
 
-    fun parsePathString(path: String): IPathHandler {
+    fun parsePathString(path: String, tolerance: Float = 0.0001f): List<Vector> {
         val bezierPath = BezierListProducer()
         val commandList = matchPathRegex.matcher(path)
 
@@ -107,7 +108,7 @@ object BezierPathUtility {
 
         }
 
-        return bezierPath
+        return bezierPath.generateVectors(tolerance)
     }
 
     private fun nextFloat(l: LinkedList<String>): Float {

@@ -2,6 +2,7 @@ package org.roylance.path.bezier
 
 import org.roylance.path.models.Vector
 
+
 class Bezier {
     var length: Float = 0f
     private var coordinates: Array<Float>? = null

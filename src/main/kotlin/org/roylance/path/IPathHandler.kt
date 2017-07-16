@@ -40,5 +40,5 @@ interface IPathHandler {
                     largeArcFlag: Boolean, sweefFlag: Boolean,
                     x: Float, y: Float)
 
-    fun generatePoints(tolerance: Float = 0.0001f): List<Vector>
+    fun generateVectors(tolerance: Float = 0.0001f): List<Vector>
 }

@@ -166,7 +166,7 @@ class BezierListProducer: IPathHandler {
     override fun arcAbsolute(rx: Float, ry: Float, xAxisRotation: Float, largeArcFlag: Boolean, sweefFlag: Boolean, x: Float, y: Float) {
     }
 
-    override fun generatePoints(tolerance: Float): List<Vector> {
+    override fun generateVectors(tolerance: Float): List<Vector> {
         val returnList = ArrayList<Vector>()
         var runningInterpolation = 0.0f
         while (runningInterpolation <= 1.0) {
